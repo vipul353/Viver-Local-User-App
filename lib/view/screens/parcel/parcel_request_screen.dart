@@ -275,7 +275,7 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
     );
   }
 
-  void orderCallback(bool isSuccess, String message, String orderID, int zoneID) {
+  void orderCallback(bool isSuccess, String message, String orderID, int zoneID,double orderAmount ) {
     Get.find<ParcelController>().startLoader(false);
     if(isSuccess) {
       if(Get.find<ParcelController>().paymentIndex == 1) {
