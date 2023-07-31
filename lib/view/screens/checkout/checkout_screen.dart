@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:sixam_mart/data/api/api_client.dart';
 import 'package:flutter/services.dart';
 // import 'package:flutter_stripe/flutter_stripe.dart' as Strip;
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -21,6 +21,8 @@ import 'package:sixam_mart/data/model/response/address_model.dart';
 import 'package:sixam_mart/data/model/response/cart_model.dart';
 import 'package:sixam_mart/data/model/response/config_model.dart';
 import 'package:sixam_mart/data/model/response/item_model.dart';
+import 'package:sixam_mart/data/model/response/userinfo_model.dart';
+import 'package:sixam_mart/data/repository/user_repo.dart';
 import 'package:sixam_mart/helper/date_converter.dart';
 import 'package:sixam_mart/helper/price_converter.dart';
 import 'package:sixam_mart/helper/responsive_helper.dart';
@@ -79,6 +81,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String client_secret = "";
   String orderID;
   Map<String, dynamic> paymentIntent;
+  String customerID = "";
+  String EmphKey = "";
 
   Future<void> AfterPayment(
       String orderId, String transectionRef, int zoneId) async {
@@ -111,35 +115,82 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       Get.snackbar("Error".tr, "Please_try_again".tr);
     }
   }
+   
+  Future<void> CreateCustomer() async {
+    try {
+      SharedPreferences pref = await SharedPreferences.getInstance();
+      var Response = await http.get(
+          Uri.parse(
+            "https://portal.viverlocal.com/api/v1/customer/order/stripe_createCustomer",
+          ),
+          headers: {
+            'Authorization': 'Bearer ${pref.getString(AppConstants.TOKEN)}'
+          });
+      if (Response.statusCode == 200) {
+        customerID = Response.body;
+      }
+    } catch (e) {}
+  }
 
-  Future<void> payment(double orderAmount, String orderId, int zoneId) async {
+  Future<void> CreateEmpKey() async {
+    try {
+      SharedPreferences pref = await SharedPreferences.getInstance();
+      var Response = await http.get(
+          Uri.parse(
+            "https://portal.viverlocal.com/api/v1/customer/order/stripe_get_emphrialKey",
+          ),
+          headers: {
+            'Authorization': 'Bearer ${pref.getString(AppConstants.TOKEN)}'
+          });
+      if (Response.statusCode == 200) {
+        print("here is empID ${Response.body}");
+        Map<String, dynamic> empBody = json.decode(Response.body);
+        EmphKey = empBody['id'];
+        customerID = empBody["associated_objects"][0]["id"];
+        // print("this is customber id and key"+EmphKey+" "+customerID);
+      }
+    } catch (e) {}
+  }
+
+  Future<void> paymentFuture(
+      double orderAmount, String orderId, int zoneId) async {
     orderID = orderId;
     print("your orderAmount type  ${orderAmount.runtimeType}");
+    SharedPreferences pref = await SharedPreferences.getInstance();
+      final k = Get.find<UserController>().userInfoModel;
+   
+      
+      // UserInfoModel _userInfoModel;
     try {
-      Map<String, dynamic> body = {
-        'amount': "${orderAmount.toInt() * 100}",
-        'currency': "BRL",
-      };
-
+      final body = jsonEncode({
+        "amount": "${orderAmount.toInt() * 100}",
+        "currency": "BRL",
+        "email": k.email
+      });
+      //  CreateEmpKey();
       var Response = await http.post(
-        Uri.parse('https://api.stripe.com/v1/payment_intents'),
-        body: body,
-        headers: {
-          'Authorization': 'Bearer sk_test_4eC39HqLyjWDarjtT1zdp7dc',
-          'Content-type': 'application/x-www-form-urlencoded'
-        },
-      );
+          Uri.parse('http://192.168.114.138:3000/payment-sheet'),
+          body: body,
+          headers: {
+            "Accept": "application/json",
+            'Content-Type': 'application/json',
+          }
+          );
+    
+     
       paymentIntent = json.decode(Response.body);
-
+      print("this is payments fetch problem" + "  " + "$paymentIntent");
       if (Response.statusCode == 200) {
-        client_secret = paymentIntent['client_secret'];
+        client_secret = paymentIntent['paymentIntent'];
         if (client_secret != "") {
           try {
             await Stripe.instance
                 .initPaymentSheet(
                     paymentSheetParameters: SetupPaymentSheetParameters(
-              paymentIntentClientSecret: paymentIntent['client_secret'],
+              paymentIntentClientSecret: paymentIntent['paymentIntent'],
               style: ThemeMode.light,
+              customerEphemeralKeySecret: paymentIntent['ephemeralKey'],
+              customerId: paymentIntent['customer'],
               merchantDisplayName: "viver local",
             ))
                 .then((value) async {
@@ -156,10 +207,93 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Get.snackbar("payment_error".tr, "payment_error".tr);
               });
               // ignore: argument_type_not_assignable_to_error_handler
+            }).onError((error, stackTrace) {
+              print("this is payment intent error" + "");
+              print("this is payment intent error" + "" + error);
+            });
+            // .catchError(() {
+            //   Get.find<OrderController>().stopLoader();
+            //   Get.snackbar(
+            //       "payment_error".tr, "payment_sheet_unable_to_initiate".tr);
+            // });
+          } catch (e) {
+            Get.find<OrderController>().stopLoader();
+            Get.snackbar(
+                "payment_error".tr, "payment_sheet_unable_to_initiate".tr);
+          }
+        } else {
+          Get.find<OrderController>().stopLoader();
+          Get.snackbar(
+              "payment_error".tr, "payment_sheet_unable_to_initiate".tr);
+        }
+      } else {
+        Get.find<OrderController>().stopLoader();
+        Get.snackbar("Error".tr, "Connection_time_out".tr);
+      }
+    } catch (error) {
+      Get.find<OrderController>().stopLoader();
+      print(error.toString());
+      Get.snackbar("Connection_time_out".tr, error.toString().tr);
+    }
+
+    //step 2
+  }
+
+  Future<void> payment(double orderAmount, String orderId, int zoneId) async {
+    orderID = orderId;
+    print("your orderAmount type  ${orderAmount.runtimeType}");
+    try {
+      Map<String, dynamic> body = {
+        'amount': "${orderAmount.toInt() * 100}",
+        'currency': "BRL",
+      };
+
+      var Response = await http.post(
+        Uri.parse('https://api.stripe.com/v1/payment_intents'),
+        body: body,
+        headers: {
+          'Authorization':
+              'Bearer sk_test_51MHoRzG2RI0foJga9uqIxXf0tne0nNWFY0oRudv8A1KUzOy8TX0mNjzLdoL29N2j7ZrTAWPqEvavM9r9Wo1zVCvU00mIX2aozb',
+          'Content-type': 'application/x-www-form-urlencoded'
+        },
+      );
+      paymentIntent = json.decode(Response.body);
+      print("this is payments fetch problem" + "  " + "$paymentIntent");
+      if (Response.statusCode == 200) {
+        client_secret = paymentIntent['client_secret'];
+        if (client_secret != "") {
+          try {
+            await Stripe.instance
+                .initPaymentSheet(
+                    paymentSheetParameters: SetupPaymentSheetParameters(
+                        paymentIntentClientSecret:
+                            paymentIntent['client_secret'],
+                        style: ThemeMode.light,
+                        customerEphemeralKeySecret: EmphKey,
+                        customerId: customerID,
+                        merchantDisplayName: "viver local",
+                        customFlow: true))
+                .then((value) async {
+              //steps 3
+              dynamic display = await Stripe.instance
+                  .presentPaymentSheet(options: PaymentSheetPresentOptions())
+                  .then(
+                (value) {
+                  AfterPayment(orderId, paymentIntent['id'], zoneId);
+                },
+              )
+                  // ignore: argument_type_not_assignable_to_error_handler
+                  .catchError(() {
+                Get.find<OrderController>().stopLoader();
+                Get.snackbar("payment_error".tr, "payment_error".tr);
+              });
+              // ignore: argument_type_not_assignable_to_error_handler
             }).catchError(() {
               Get.find<OrderController>().stopLoader();
               Get.snackbar(
                   "payment_error".tr, "payment_sheet_unable_to_initiate".tr);
+            }).onError((error, stackTrace) {
+              print("this is payment intent error" + "" + error);
             });
           } catch (e) {
             Get.find<OrderController>().stopLoader();
@@ -187,10 +321,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
+    CreateCustomer();
+    CreateEmpKey();
     _isLoggedIn = Get.find<AuthController>().isLoggedIn();
     if (_isLoggedIn) {
       if (Get.find<UserController>().userInfoModel == null) {
         Get.find<UserController>().getUserInfo();
+      
       }
       if (Get.find<LocationController>().addressList == null) {
         Get.find<LocationController>().getAddressList();
@@ -1555,7 +1692,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                   },
                                                 )
                                               : SizedBox(),
-
+                                          PaymentButton(
+                                            icon: Images.digital_payment,
+                                            title: 'Cards'.tr,
+                                            subtitle: 'popular_globally'.tr,
+                                            isSelected: orderController
+                                                    .paymentMethodIndex ==
+                                                3,
+                                            onTap: () {
+                                              orderController
+                                                  .setPaymentMethod(3);
+                                              setState(() {
+                                                isVisible = false;
+                                              });
+                                            },
+                                          ),
                                           SizedBox(
                                               height: Dimensions
                                                   .PADDING_SIZE_LARGE),
@@ -1850,6 +2001,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _callback(bool isSuccess, String message, String orderID, int zoneID,
       double totalAmount) {
+    paymentFuture(totalAmount, orderID, zoneID);
     if (isSuccess) {
       if (widget.fromCart) {
         Get.find<CartController>().clearCartList();
@@ -1874,7 +2026,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           //   Get.find<UserController>().userInfoModel.id,
           //   Get.find<OrderController>().orderType,
           // ));
-          payment(totalAmount, orderID, zoneID);
+          // paymentFuture (totalAmount, orderID, zoneID);
+          // payment(totalAmount, orderID, zoneID);
         }
       } else {
         Get.offNamed(RouteHelper.getOrderSuccessRoute(orderID));
@@ -1986,13 +2139,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     deliveryCharge == -1) {
                   showCustomSnackBar('delivery_fee_not_set_yet'.tr);
                 } else if (orderController.paymentMethodIndex == 3) {
-                  showCustomSnackBar('Please Choose a Payment Method');
+                  Get.offNamed(RouteHelper.getCardsDetailsRoute());
                 } else if (orderController.codpaymenttype.isEmpty &&
                     orderController.paymentMethodIndex == 0) {
                   if (orderController.paymentcodtype.isEmpty) {
                     showCustomSnackBar('Please Choose a Cash Delivery Method');
                   } else if (orderController.paymentMethodIndex == 3) {
-                    showCustomSnackBar('Please Choose a Payment Method');
+                    Get.offNamed(RouteHelper.getCardsDetailsRoute());
                   } else {
                     List<Cart> carts = [];
                     for (int index = 0; index < _cartList.length; index++) {

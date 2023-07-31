@@ -285,7 +285,7 @@ class OrderController extends GetxController implements GetxService {
     update();
     print(placeOrderBody.toJson());
     Response response = await orderRepo.placeOrder(placeOrderBody, _orderAttachment);
-    // _isLoading = false;
+    _isLoading = false;
     if (response.statusCode == 200) {
       String message = response.body['message'];
       String orderID = response.body['order_id'].toString();
