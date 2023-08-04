@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:sixam_mart/data/api/api_client.dart';
 import 'package:flutter/services.dart';
 // import 'package:flutter_stripe/flutter_stripe.dart' as Strip;
@@ -53,6 +54,8 @@ import 'package:universal_html/html.dart' as html;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pay/pay.dart';
+import 'package:sixam_mart/util/payment_config.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final List<CartModel> cartList;
@@ -115,52 +118,51 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       Get.snackbar("Error".tr, "Please_try_again".tr);
     }
   }
-   
-  Future<void> CreateCustomer() async {
-    try {
-      SharedPreferences pref = await SharedPreferences.getInstance();
-      var Response = await http.get(
-          Uri.parse(
-            "https://portal.viverlocal.com/api/v1/customer/order/stripe_createCustomer",
-          ),
-          headers: {
-            'Authorization': 'Bearer ${pref.getString(AppConstants.TOKEN)}'
-          });
-      if (Response.statusCode == 200) {
-        customerID = Response.body;
-      }
-    } catch (e) {}
-  }
 
-  Future<void> CreateEmpKey() async {
-    try {
-      SharedPreferences pref = await SharedPreferences.getInstance();
-      var Response = await http.get(
-          Uri.parse(
-            "https://portal.viverlocal.com/api/v1/customer/order/stripe_get_emphrialKey",
-          ),
-          headers: {
-            'Authorization': 'Bearer ${pref.getString(AppConstants.TOKEN)}'
-          });
-      if (Response.statusCode == 200) {
-        print("here is empID ${Response.body}");
-        Map<String, dynamic> empBody = json.decode(Response.body);
-        EmphKey = empBody['id'];
-        customerID = empBody["associated_objects"][0]["id"];
-        // print("this is customber id and key"+EmphKey+" "+customerID);
-      }
-    } catch (e) {}
-  }
+  // Future<void> CreateCustomer() async {
+  //   try {
+  //     SharedPreferences pref = await SharedPreferences.getInstance();
+  //     var Response = await http.get(
+  //         Uri.parse(
+  //           "https://portal.viverlocal.com/api/v1/customer/order/stripe_createCustomer",
+  //         ),
+  //         headers: {
+  //           'Authorization': 'Bearer ${pref.getString(AppConstants.TOKEN)}'
+  //         });
+  //     if (Response.statusCode == 200) {
+  //       customerID = Response.body;
+  //     }
+  //   } catch (e) {}
+  // }
+
+  // Future<void> CreateEmpKey() async {
+  //   try {
+  //     SharedPreferences pref = await SharedPreferences.getInstance();
+  //     var Response = await http.get(
+  //         Uri.parse(
+  //           "https://portal.viverlocal.com/api/v1/customer/order/stripe_get_emphrialKey",
+  //         ),
+  //         headers: {
+  //           'Authorization': 'Bearer ${pref.getString(AppConstants.TOKEN)}'
+  //         });
+  //     if (Response.statusCode == 200) {
+  //       print("here is empID ${Response.body}");
+  //       Map<String, dynamic> empBody = json.decode(Response.body);
+  //       EmphKey = empBody['id'];
+  //       customerID = empBody["associated_objects"][0]["id"];
+  //       // print("this is customber id and key"+EmphKey+" "+customerID);
+  //     }
+  //   } catch (e) {}
+  // }
 
   Future<void> paymentFuture(
       double orderAmount, String orderId, int zoneId) async {
     orderID = orderId;
     print("your orderAmount type  ${orderAmount.runtimeType}");
     SharedPreferences pref = await SharedPreferences.getInstance();
-      final k = Get.find<UserController>().userInfoModel;
-   
-      
-      // UserInfoModel _userInfoModel;
+    final k = Get.find<UserController>().userInfoModel;
+
+    // UserInfoModel _userInfoModel;
     try {
       final body = jsonEncode({
         "amount": "${orderAmount.toInt() * 100}",
@@ -169,15 +171,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
       //  CreateEmpKey();
       var Response = await http.post(
-          Uri.parse('http://192.168.114.138:3000/payment-sheet'),
+          Uri.parse('https://stripecard.viverlocal.com/payment-sheet'),
           body: body,
           headers: {
             "Accept": "application/json",
             'Content-Type': 'application/json',
-          }
-          );
-    
-     
+          });
+
       paymentIntent = json.decode(Response.body);
       print("this is payments fetch problem" + "  " + "$paymentIntent");
       if (Response.statusCode == 200) {
@@ -186,13 +186,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           try {
             await Stripe.instance
                 .initPaymentSheet(
-                    paymentSheetParameters: SetupPaymentSheetParameters(
-              paymentIntentClientSecret: paymentIntent['paymentIntent'],
-              style: ThemeMode.light,
-              customerEphemeralKeySecret: paymentIntent['ephemeralKey'],
-              customerId: paymentIntent['customer'],
-              merchantDisplayName: "viver local",
-            ))
+              paymentSheetParameters: SetupPaymentSheetParameters(
+                paymentIntentClientSecret: paymentIntent['paymentIntent'],
+                style: ThemeMode.light,
+                customerEphemeralKeySecret: paymentIntent['ephemeralKey'],
+                customerId: paymentIntent['customer'],
+                merchantDisplayName: "viver local",
+              ),
+            )
                 .then((value) async {
               //steps 3
               dynamic display =
@@ -211,11 +212,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               print("this is payment intent error" + "");
               print("this is payment intent error" + "" + error);
             });
-            // .catchError(() {
-            //   Get.find<OrderController>().stopLoader();
-            //   Get.snackbar(
-            //       "payment_error".tr, "payment_sheet_unable_to_initiate".tr);
-            // });
+         
           } catch (e) {
             Get.find<OrderController>().stopLoader();
             Get.snackbar(
@@ -321,13 +318,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
-    CreateCustomer();
-    CreateEmpKey();
+    // CreateCustomer();
+    // CreateEmpKey();
     _isLoggedIn = Get.find<AuthController>().isLoggedIn();
     if (_isLoggedIn) {
       if (Get.find<UserController>().userInfoModel == null) {
         Get.find<UserController>().getUserInfo();
-      
       }
       if (Get.find<LocationController>().addressList == null) {
         Get.find<LocationController>().getAddressList();
@@ -1320,7 +1316,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           _isCashOnDeliveryActive
                                               ? PaymentButton(
                                                   icon: Images.cash_on_delivery,
-                                                  title: 'cash_on_delivery'.tr,
+                                                  title: 'Pix on delivery'.tr,
                                                   subtitle:
                                                       (_cod_payment_method_type_name ==
                                                               "")
@@ -1492,7 +1488,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                                                                 // if(index == 1){
                                                                                                 //   print(subList[index]["cash_module"]);
                                                                                                 // }
-                                                                                                (index != 4)
+                                                                                                (index != 3)
                                                                                                     ? Column(
                                                                                                         children: [
                                                                                                           Text('Upload Receipt'),
@@ -1676,7 +1672,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           _isWalletActive
                                               ? PaymentButton(
                                                   icon: Images.wallet,
-                                                  title: 'wallet_payment'.tr,
+                                                  title: 'payment'.tr,
                                                   subtitle:
                                                       'pay_from_your_existing_balance'
                                                           .tr,
@@ -1692,21 +1688,63 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                   },
                                                 )
                                               : SizedBox(),
-                                          PaymentButton(
-                                            icon: Images.digital_payment,
-                                            title: 'Cards'.tr,
-                                            subtitle: 'popular_globally'.tr,
-                                            isSelected: orderController
-                                                    .paymentMethodIndex ==
-                                                3,
-                                            onTap: () {
-                                              orderController
-                                                  .setPaymentMethod(3);
-                                              setState(() {
-                                                isVisible = false;
-                                              });
-                                            },
-                                          ),
+                                          // PaymentButton(
+                                          //   icon: Images.digital_payment,
+                                          //   title: 'Cards'.tr,
+                                          //   subtitle: 'popular_globally'.tr,
+                                          //   isSelected: orderController
+                                          //           .paymentMethodIndex ==
+                                          //       3,
+                                          //   onTap: () {
+                                          //     orderController
+                                          //         .setPaymentMethod(3);
+                                          //     setState(() {
+                                          //       isVisible = false;
+                                          //     });
+                                          //   },
+                                          // ),
+                                          // GooglePayButton(
+                                          //     onPaymentResult: (result) {
+                                          //       print("$result");
+                                          //     },
+                                          //     loadingIndicator: Center(
+                                          //         child:
+                                          //             CircularProgressIndicator()),
+                                          //     paymentConfiguration:
+                                          //         PaymentConfiguration
+                                          //             .fromJsonString(
+                                          //                 defaultGooglePay),
+                                          //     width: MediaQuery.of(context).size.width,
+                                          //     height: 50,
+                                          //     paymentItems: const [
+                                          //       PaymentItem(
+                                          //         amount: '8.81',
+                                          //         label: 'Item A',
+                                          //         status: PaymentItemStatus
+                                          //             .final_price,
+                                          //       ),
+                                          //     ]),
+                                              //   ApplePayButton(
+                                              // onPaymentResult: (result) {
+                                              //   print("$result");
+                                              // },
+                                              // loadingIndicator: Center(
+                                              //     child:
+                                              //         CircularProgressIndicator()),
+                                              // paymentConfiguration:
+                                              //     PaymentConfiguration
+                                              //         .fromJsonString(
+                                              //             defaultApplePay),
+                                              // width: MediaQuery.of(context).size.width,
+                                              // height: 50,
+                                              // paymentItems: const [
+                                              //   PaymentItem(
+                                              //     amount: '8.81',
+                                              //     label: 'Item A',
+                                              //     status: PaymentItemStatus
+                                              //         .final_price,
+                                              //   ),
+                                              // ]),
                                           SizedBox(
                                               height: Dimensions
                                                   .PADDING_SIZE_LARGE),
@@ -2001,7 +2039,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _callback(bool isSuccess, String message, String orderID, int zoneID,
       double totalAmount) {
-    paymentFuture(totalAmount, orderID, zoneID);
     if (isSuccess) {
       if (widget.fromCart) {
         Get.find<CartController>().clearCartList();
@@ -2028,6 +2065,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           // ));
           // paymentFuture (totalAmount, orderID, zoneID);
           // payment(totalAmount, orderID, zoneID);
+          paymentFuture(totalAmount, orderID, zoneID);
         }
       } else {
         Get.offNamed(RouteHelper.getOrderSuccessRoute(orderID));
@@ -2139,13 +2177,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     deliveryCharge == -1) {
                   showCustomSnackBar('delivery_fee_not_set_yet'.tr);
                 } else if (orderController.paymentMethodIndex == 3) {
-                  Get.offNamed(RouteHelper.getCardsDetailsRoute());
+                  showCustomSnackBar('Please Choose a Cash Delivery Method');
                 } else if (orderController.codpaymenttype.isEmpty &&
                     orderController.paymentMethodIndex == 0) {
                   if (orderController.paymentcodtype.isEmpty) {
                     showCustomSnackBar('Please Choose a Cash Delivery Method');
                   } else if (orderController.paymentMethodIndex == 3) {
-                    Get.offNamed(RouteHelper.getCardsDetailsRoute());
+                    showCustomSnackBar('Please Choose a Cash Delivery Method');
                   } else {
                     List<Cart> carts = [];
                     for (int index = 0; index < _cartList.length; index++) {
