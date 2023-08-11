@@ -20,21 +20,21 @@ class OrderDetailsModel {
 
   OrderDetailsModel(
       {this.id,
-        this.itemId,
-        this.orderId,
-        this.price,
-        this.itemDetails,
-        this.variation,
-        this.addOns,
-        this.discountOnItem,
-        this.discountType,
-        this.quantity,
-        this.taxAmount,
-        this.variant,
-        this.createdAt,
-        this.updatedAt,
-        this.itemCampaignId,
-        this.totalAddOnPrice});
+      this.itemId,
+      this.orderId,
+      this.price,
+      this.itemDetails,
+      this.variation,
+      this.addOns,
+      this.discountOnItem,
+      this.discountType,
+      this.quantity,
+      this.taxAmount,
+      this.variant,
+      this.createdAt,
+      this.updatedAt,
+      this.itemCampaignId,
+      this.totalAddOnPrice});
 
   OrderDetailsModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];

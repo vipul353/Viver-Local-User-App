@@ -48,6 +48,9 @@ class OrderModel {
   String couponCode;
   String orderNote;
   String orderType;
+  String cashOnDeliveryPaymentType;
+  String cashOnDeliveryPaymentMode;
+  String cashOnDeliveryPaymentImage;
   String createdAt;
   String updatedAt;
   double deliveryCharge;
@@ -87,6 +90,9 @@ class OrderModel {
         this.orderStatus,
         this.totalTaxAmount,
         this.paymentMethod,
+        this.cashOnDeliveryPaymentType,
+        this.cashOnDeliveryPaymentMode,
+        this.cashOnDeliveryPaymentImage,
         this.couponCode,
         this.orderNote,
         this.orderType,
@@ -128,6 +134,9 @@ class OrderModel {
     couponDiscountTitle = json['coupon_discount_title'];
     paymentStatus = json['payment_status'];
     orderStatus = json['order_status'];
+    cashOnDeliveryPaymentImage = json['cod_payment_method_image'];
+    cashOnDeliveryPaymentMode = json['cod_payment_method_name'];
+    cashOnDeliveryPaymentType = json['cod_payment_method_type_name'];
     totalTaxAmount = json['total_tax_amount'].toDouble();
     paymentMethod = json['payment_method'];
     couponCode = json['coupon_code'];
@@ -182,6 +191,9 @@ class OrderModel {
     data['delivery_charge'] = this.deliveryCharge;
     data['schedule_at'] = this.scheduleAt;
     data['otp'] = this.otp;
+    data['cod_payment_method_image'] = this.cashOnDeliveryPaymentImage;
+    data['cod_payment_method_name'] = this.cashOnDeliveryPaymentType;
+    data['cod_payment_method_type_name'] = this.cashOnDeliveryPaymentMode;
     data['pending'] = this.pending;
     data['accepted'] = this.accepted;
     data['confirmed'] = this.confirmed;
