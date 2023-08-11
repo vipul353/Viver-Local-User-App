@@ -28,7 +28,11 @@ import 'package:sixam_mart/view/screens/checkout/widget/tips_widget.dart';
 import 'package:sixam_mart/view/screens/parcel/widget/card_widget.dart';
 import 'package:sixam_mart/view/screens/parcel/widget/details_widget.dart';
 import 'package:universal_html/html.dart' as html;
-
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'dart:convert';
+import 'dart:io';
 class ParcelRequestScreen extends StatefulWidget {
   final ParcelCategoryModel parcelCategory;
   final AddressModel pickedUpAddress;
@@ -42,6 +46,124 @@ class ParcelRequestScreen extends StatefulWidget {
 class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
   TextEditingController _tipController = TextEditingController();
   bool _isLoggedIn = Get.find<AuthController>().isLoggedIn();
+    String client_secret = "";
+  String orderID;
+  Map<String, dynamic> paymentIntent;
+  String customerID = "";
+  String EmphKey = "";
+   
+    Future<void> AfterPayment(
+      String orderId, String transectionRef, int zoneId) async {
+    print("your payment complited");
+    try {
+      Map<String, dynamic> body = {
+        "id": orderId,
+        "order_status": "confirmed",
+        "payment_status": "paid",
+        "payment_method": "stripe",
+        "transaction_ref": transectionRef
+      };
+      SharedPreferences pref = await SharedPreferences.getInstance();
+      var Response = await http.post(
+          Uri.parse(
+            "https://portal.viverlocal.com/api/v1/customer/order/stripe_success",
+          ),
+          body: body,
+          headers: {
+            'Authorization': 'Bearer ${pref.getString(AppConstants.TOKEN)}'
+          });
+      if (Response.statusCode == 200) {
+        Get.find<OrderController>().clearPrevData(zoneId);
+        Get.find<OrderController>().stopLoader();
+        Get.offNamed(RouteHelper.getOrderSuccessRoute(orderId));
+      }
+    } catch (e) {
+      Get.find<OrderController>().stopLoader();
+      print("after payment error ${e}");
+      Get.snackbar("Error".tr, "Please_try_again".tr);
+    }
+  }
+
+  Future<void> paymentFuture(
+      double orderAmount, String orderId, int zoneId) async {
+    orderID = orderId;
+    print("your orderAmount type  ${orderAmount.runtimeType}");
+    SharedPreferences pref = await SharedPreferences.getInstance();
+    final k = Get.find<UserController>().userInfoModel;
+
+    // UserInfoModel _userInfoModel;
+    try {
+      final body = jsonEncode({
+        "amount": "${orderAmount.toInt() * 100}",
+        "currency": "BRL",
+        "email": k.email
+      });
+      //  CreateEmpKey();
+      var Response = await http.post(
+          Uri.parse('https://stripecard.viverlocal.com/payment-sheet'),
+          body: body,
+          headers: {
+            "Accept": "application/json",
+            'Content-Type': 'application/json',
+          });
+
+      paymentIntent = json.decode(Response.body);
+      print("this is payments fetch problem" + "  " + "$paymentIntent");
+      if (Response.statusCode == 200) {
+        client_secret = paymentIntent['paymentIntent'];
+        if (client_secret != "") {
+          try {
+            await Stripe.instance
+                .initPaymentSheet(
+              paymentSheetParameters: SetupPaymentSheetParameters(
+                paymentIntentClientSecret: paymentIntent['paymentIntent'],
+                style: ThemeMode.light,
+                customerEphemeralKeySecret: paymentIntent['ephemeralKey'],
+                customerId: paymentIntent['customer'],
+                merchantDisplayName: "viver local",
+              ),
+            )
+                .then((value) async {
+              //steps 3
+              dynamic display =
+                  await Stripe.instance.presentPaymentSheet().then(
+                (value) {
+                  AfterPayment(orderId, paymentIntent['id'], zoneId);
+                },
+              )
+                      // ignore: argument_type_not_assignable_to_error_handler
+                      .catchError(() {
+                Get.find<OrderController>().stopLoader();
+                Get.snackbar("payment_error".tr, "payment_error".tr);
+              });
+              // ignore: argument_type_not_assignable_to_error_handler
+            }).onError((error, stackTrace) {
+              print("this is payment intent error" + "");
+              print("this is payment intent error" + "" + error);
+            });
+         
+          } catch (e) {
+            Get.find<OrderController>().stopLoader();
+            Get.snackbar(
+                "payment_error".tr, "payment_sheet_unable_to_initiate".tr);
+          }
+        } else {
+          Get.find<OrderController>().stopLoader();
+          Get.snackbar(
+              "payment_error".tr, "payment_sheet_unable_to_initiate".tr);
+        }
+      } else {
+        Get.find<OrderController>().stopLoader();
+        Get.snackbar("Error".tr, "Connection_time_out".tr);
+      }
+    } catch (error) {
+      Get.find<OrderController>().stopLoader();
+      print(error.toString());
+      Get.snackbar("Connection_time_out".tr, error.toString().tr);
+    }
+
+    //step 2
+  }
 
   @override
   void initState() {
@@ -275,7 +397,7 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
     );
   }
 
-  void orderCallback(bool isSuccess, String message, String orderID, int zoneID) {
+  void orderCallback(bool isSuccess, String message, String orderID, int zoneID,double orderAmount ) {
     Get.find<ParcelController>().startLoader(false);
     if(isSuccess) {
       if(Get.find<ParcelController>().paymentIndex == 1) {
@@ -287,7 +409,8 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
               .userInfoModel.id}&&callback=$protocol//$hostname${RouteHelper.orderSuccess}?id=$orderID&status=';
           html.window.open(selectedUrl,"_self");
         } else{
-          Get.offNamed(RouteHelper.getPaymentRoute(orderID, Get.find<UserController>().userInfoModel.id, 'parcel'));
+          // Get.offNamed(RouteHelper.getPaymentRoute(orderID, Get.find<UserController>().userInfoModel.id, 'parcel'));
+          paymentFuture(orderAmount, orderID, zoneID);
         }
       }else {
         Get.offNamed(RouteHelper.getOrderSuccessRoute(orderID));

@@ -5,7 +5,12 @@ import 'package:sixam_mart/data/model/response/item_model.dart';
 import 'package:flutter/material.dart';
 
 class PlaceOrderBody {
+    // print( _cod_payment_method_name );//search here '
+    // print(_cod_payment_method_type_name );
   List<Cart> _cart;
+  String _codPaymentMethodName;
+  String _codPaymentMethodTypeName;
+  String _codPaymentMethodImage;
   double _couponDiscountAmount;
   double _orderAmount;
   String _orderType;
@@ -32,14 +37,19 @@ class PlaceOrderBody {
   String _dmTips;
   String _codmethodtype;
   String _methodcodtype;
+  double _cashPay;
 
   PlaceOrderBody(
       {@required List<Cart> cart,
+      @required String codPaymentMethodName,
+      @required String codPaymentMethodTypeName,
+      @required String codPaymentMethodImage,
         @required double couponDiscountAmount,
         @required String couponCode,
         @required double orderAmount,
         @required String orderType,
         @required String paymentMethod,
+        // cod_payment_method
         @required int storeId,
         @required double distance,
         @required String scheduleAt,
@@ -61,8 +71,12 @@ class PlaceOrderBody {
         @required String dmTips,
         @required String codmethodtype,
         @required String methodcodtype,
+        @required double  cashPay,
       }) {
     this._cart = cart;
+    this._codPaymentMethodName = codPaymentMethodName;
+    this._codPaymentMethodTypeName = codPaymentMethodTypeName;
+    this._codPaymentMethodImage = codPaymentMethodImage;
     this._couponDiscountAmount = couponDiscountAmount;
     this._orderAmount = orderAmount;
     this._orderType = orderType;
@@ -89,9 +103,13 @@ class PlaceOrderBody {
     this._dmTips = dmTips;
     this._codmethodtype = codmethodtype;
     this._methodcodtype = methodcodtype;
+    this._cashPay =cashPay;
   }
 
   List<Cart> get cart => _cart;
+  String get codPaymentMethodName =>_codPaymentMethodName;
+  String get codPaymentMethodTypeName => _codPaymentMethodTypeName;
+  String get codPaymentmethodImage => _codPaymentMethodImage;
   double get couponDiscountAmount => _couponDiscountAmount;
   double get orderAmount => _orderAmount;
   String get orderType => _orderType;
@@ -117,6 +135,7 @@ class PlaceOrderBody {
   String get dmTips => _dmTips;
   String get codmethodtype => _codmethodtype;
   String get methodcodtype => _methodcodtype;
+  double get cashPay => _cashPay;
 
   PlaceOrderBody.fromJson(Map<String, dynamic> json) {
     if (json['cart'] != null) {
@@ -125,6 +144,9 @@ class PlaceOrderBody {
         _cart.add(new Cart.fromJson(v));
       });
     }
+    _codPaymentMethodName = json['cod_payment_method_name'];
+    _codPaymentMethodTypeName = json['cod_payment_method_type_name'];
+    _codPaymentMethodImage = json['cod_payment_method_image'];
     _couponDiscountAmount = json['coupon_discount_amount'];
     _orderAmount = json['order_amount'];
     _orderType = json['order_type'];
@@ -151,6 +173,7 @@ class PlaceOrderBody {
     _dmTips = json['dm_tips'];
     _codmethodtype = json['codmethodtype'];
     _methodcodtype = json['methodcodtype'];
+    _cashPay = json['cash_pay'];
   }
 
   Map<String, String> toJson() {
@@ -158,6 +181,9 @@ class PlaceOrderBody {
     if (this._cart != null) {
       data['cart'] = jsonEncode(this._cart.map((v) => v.toJson()).toList());
     }
+    data['cod_payment_method_name'] = this._codPaymentMethodName;
+    data['cod_payment_method_type_name'] = this._codPaymentMethodTypeName;
+    data['cod_payment_method_image'] = this._codPaymentMethodImage;
     if(this._couponDiscountAmount != null) {
       data['coupon_discount_amount'] = this._couponDiscountAmount.toString();
     }
@@ -200,6 +226,7 @@ class PlaceOrderBody {
     data['dm_tips'] = this._dmTips;
     data['codmethodtype'] = this._codmethodtype;
     data['methodcodtype'] = this._methodcodtype;
+    data['cash_pay'] = this._cashPay.toString();
     return data;
   }
 }

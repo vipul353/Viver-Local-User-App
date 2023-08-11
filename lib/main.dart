@@ -24,6 +24,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:url_strategy/url_strategy.dart';
 import 'helper/get_di.dart' as di;
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -33,6 +34,8 @@ Future<void> main() async {
   }
   setPathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
+  Stripe.publishableKey = "pk_test_51MHoRzG2RI0foJgaeQOpNl3nceKmwoDrItYQHPKo9utkEb46uSRDFb2qymlmwk2hJaMyOzAPn2Pos4qG52Ll2ZE200K9q7gCOO";
+  
   if(GetPlatform.isWeb){
     await Firebase.initializeApp(options: FirebaseOptions(
       apiKey: 'AIzaSyDFN-73p8zKVZbA0i5DtO215XzAb-xuGSE',

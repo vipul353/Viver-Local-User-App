@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:sixam_mart/controller/location_controller.dart';
 import 'package:sixam_mart/controller/splash_controller.dart';
 import 'package:sixam_mart/data/model/body/notification_body.dart';
@@ -67,6 +68,7 @@ import 'package:sixam_mart/view/screens/update/update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sixam_mart/view/screens/wallet/wallet_screen.dart';
+import 'package:sixam_mart/view/screens/checkout/cards_details.dart';
 
 class RouteHelper {
   static const String initial = '/';
@@ -123,7 +125,7 @@ class RouteHelper {
   static const String restaurantRegistration = '/restaurant-registration';
   static const String deliveryManRegistration = '/delivery-man-registration';
   static const String refund = '/refund';
-
+  static const String CardsDetail = '/cardsDetails';
 
   static String getInitialRoute() => '$initial';
   static String getSplashRoute(NotificationBody body) {
@@ -233,6 +235,7 @@ class RouteHelper {
   static String getRestaurantRegistrationRoute() => '$restaurantRegistration';
   static String getDeliverymanRegistrationRoute() => '$deliveryManRegistration';
   static String getRefundRequestRoute(String orderID) => '$refund?id=$orderID';
+  static String getCardsDetailsRoute() => '$CardsDetail';
 
   static List<GetPage> routes = [
     GetPage(name: initial, page: () => getRoute(DashboardScreen(pageIndex: 0))),
@@ -387,6 +390,7 @@ class RouteHelper {
     GetPage(name: restaurantRegistration, page: () => StoreRegistrationScreen()),
     GetPage(name: deliveryManRegistration, page: () => DeliveryManRegistrationScreen()),
     GetPage(name: refund, page: () => RefundRequestScreen(orderId: Get.parameters['id'])),
+    GetPage(name: CardsDetail, page:()=>CardsDetails())
   ];
 
   static getRoute(Widget navigateTo) {
