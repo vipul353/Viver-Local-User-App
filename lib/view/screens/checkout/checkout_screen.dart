@@ -212,7 +212,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               print("this is payment intent error" + "");
               print("this is payment intent error" + "" + error);
             });
-         
           } catch (e) {
             Get.find<OrderController>().stopLoader();
             Get.snackbar(
@@ -1454,6 +1453,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                                           ? InkWell(
                                                                               onTap: () {
                                                                                 print(index);
+                                                                                setState(() {
+                                                                                      _cod_payment_method_name = subList[index]["title"];
+                                                                                  _cod_payment_method_type_name = subList[index]["title"];
+                                                                                  _cod_payment_method_image = subList[index]["image"];
+                                                                                 
+                                                                                });
                                                                                 showModalBottomSheet<void>(
                                                                                   context: context,
                                                                                   isScrollControlled: true,
@@ -1611,6 +1616,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                                                   _cod_payment_method_image = subList[index]["payment_modules"][index2]["image"];
                                                                                   _cash_pay = "0.00";
                                                                                   isVisible = false;
+                                                                                  print(_cod_payment_method_name); //search here
+                                                                                  print(_cod_payment_method_type_name);
                                                                                 });
                                                                               },
                                                                               child: (subList[index]["payment_modules"][index2]["ismethodexist"] == "1")
@@ -1724,27 +1731,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           //             .final_price,
                                           //       ),
                                           //     ]),
-                                              //   ApplePayButton(
-                                              // onPaymentResult: (result) {
-                                              //   print("$result");
-                                              // },
-                                              // loadingIndicator: Center(
-                                              //     child:
-                                              //         CircularProgressIndicator()),
-                                              // paymentConfiguration:
-                                              //     PaymentConfiguration
-                                              //         .fromJsonString(
-                                              //             defaultApplePay),
-                                              // width: MediaQuery.of(context).size.width,
-                                              // height: 50,
-                                              // paymentItems: const [
-                                              //   PaymentItem(
-                                              //     amount: '8.81',
-                                              //     label: 'Item A',
-                                              //     status: PaymentItemStatus
-                                              //         .final_price,
-                                              //   ),
-                                              // ]),
+                                          //   ApplePayButton(
+                                          // onPaymentResult: (result) {
+                                          //   print("$result");
+                                          // },
+                                          // loadingIndicator: Center(
+                                          //     child:
+                                          //         CircularProgressIndicator()),
+                                          // paymentConfiguration:
+                                          //     PaymentConfiguration
+                                          //         .fromJsonString(
+                                          //             defaultApplePay),
+                                          // width: MediaQuery.of(context).size.width,
+                                          // height: 50,
+                                          // paymentItems: const [
+                                          //   PaymentItem(
+                                          //     amount: '8.81',
+                                          //     label: 'Item A',
+                                          //     status: PaymentItemStatus
+                                          //         .final_price,
+                                          //   ),
+                                          // ]),
                                           SizedBox(
                                               height: Dimensions
                                                   .PADDING_SIZE_LARGE),
@@ -2213,6 +2220,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     orderController.placeOrder(
                         PlaceOrderBody(
                           cart: carts,
+                          codPaymentMethodName: _cod_payment_method_name,
+                          codPaymentMethodTypeName:
+                              _cod_payment_method_type_name,
+                                  codPaymentMethodImage: _cod_payment_method_image,
+                                   cashPay: double.parse((amountController.value.text=="")?"0.0":amountController.value.text),
                           couponDiscountAmount:
                               Get.find<CouponController>().discount,
                           distance: orderController.distance,
@@ -2294,6 +2306,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   orderController.placeOrder(
                       PlaceOrderBody(
                         cart: carts,
+                        codPaymentMethodName: _cod_payment_method_name,
+                        codPaymentMethodTypeName: _cod_payment_method_type_name,
+                        codPaymentMethodImage: _cod_payment_method_image,
+                        cashPay: double.parse((amountController.value.text=="")?"0.0":amountController.value.text),
                         couponDiscountAmount:
                             Get.find<CouponController>().discount,
                         distance: orderController.distance,

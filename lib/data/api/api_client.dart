@@ -112,6 +112,7 @@ class ApiClient extends GetxService {
       }
       _request.fields.addAll(body);
       Http.Response _response = await Http.Response.fromStream(await _request.send());
+      print("here is body "+"  "+"${body}");
       return handleResponse(_response, uri);
     } catch (e) {
       return Response(statusCode: 1, statusText: noInternetMessage);
