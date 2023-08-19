@@ -431,7 +431,7 @@ class _ParcelRequestScreenState extends State<ParcelRequestScreen> {
         }else {
           Get.find<ParcelController>().startLoader(true);
           Get.find<OrderController>().placeOrder(PlaceOrderBody(
-            cashPay:"0.0",
+            cashPay:charge.toString(),
             codPaymentMethodImage: " ",
             codPaymentMethodName: " ",
             codPaymentMethodTypeName: " ",
