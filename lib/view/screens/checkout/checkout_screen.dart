@@ -1399,21 +1399,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                           .paymentMethodIndex ==
                                                       0,
                                                   onTap: () {
-                                                    //  orderController.setPaymentMethod(0);
+                                                     orderController.setPaymentMethod(0);
                                                     setState(() {
                                                       isVisible =
                                                           (isVisible == true)
                                                               ? false
                                                               : true;
-                                                      (orderController
-                                                                  .paymentMethodIndex ==
-                                                              0)
-                                                          ? orderController
-                                                              .setPaymentMethod(
-                                                                  3)
-                                                          : orderController
-                                                              .setPaymentMethod(
-                                                                  0);
+                                                      // (orderController
+                                                      //             .paymentMethodIndex ==
+                                                      //         0)
+                                                      //     ? orderController
+                                                      //         .setPaymentMethod(
+                                                      //             3)
+                                                      //     : orderController
+                                                      //         .setPaymentMethod(
+                                                      //             0);
                                                     });
                                                   },
                                                 )
@@ -1452,7 +1452,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                                               "1")
                                                                           ? InkWell(
                                                                               onTap: () {
-                                                                                print(index);
+                                                                                // print(index);
                                                                                 setState(() {
                                                                                       _cod_payment_method_name = subList[index]["title"];
                                                                                   _cod_payment_method_type_name = subList[index]["title"];
@@ -1484,7 +1484,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                                                                     controller: amountController,
                                                                                                     inputType: TextInputType.number,
                                                                                                     hintText: 'R\$'.tr,
+                                                                                                    // isAmount: true,
                                                                                                     divider: true,
+                                                                                                
                                                                                                     // keyboardType: TextInputType.number,
                                                                                                     // decoration: InputDecoration(prefixText: "R\$"),
                                                                                                   ),
@@ -1606,15 +1608,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                                             return new InkWell(
                                                                               onTap: () {
                                                                                 orderController.setPaymentCODMethod("");
+                                                                                //  amountController.text=_total.toString();
+                                                                                //  print(amountController.text);
                                                                                 amountController.clear();
+                                                                                amountController.text=_total.toString();
+                                                                                 print(amountController.text);
                                                                                 //  orderController.setPaymentCODMethod("");
                                                                                 orderController.setCODPaymentMethod(subList[index]["payment_modules"][index2]["id"]);
                                                                                 print(orderController.codpaymenttype);
+                                                                                
                                                                                 setState(() {
                                                                                   _cod_payment_method_name = subList[index]["payment_modules"][index2]["payment_title"];
                                                                                   _cod_payment_method_type_name = subList[index]["title"];
                                                                                   _cod_payment_method_image = subList[index]["payment_modules"][index2]["image"];
-                                                                                  _cash_pay = "0.00";
+                                                                                 
+                                                                                  _cash_pay = "0.00";//search
                                                                                   isVisible = false;
                                                                                   print(_cod_payment_method_name); //search here
                                                                                   print(_cod_payment_method_type_name);
@@ -1629,12 +1637,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                                                           Container(
                                                                                               width: 50,
                                                                                               padding: EdgeInsets.all(8),
-                                                                                              child: Container(
+                                                                                              child:
+                                                                                               Container(
                                                                                                   height: 25,
                                                                                                   child: Image.network(
                                                                                                     subList[index]["payment_modules"][index2]["image"],
                                                                                                     height: 50,
-                                                                                                  ))),
+                                                                                                  ))
+                                                                                                  ),
                                                                                         ],
                                                                                       ),
                                                                                     )
@@ -2224,7 +2234,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           codPaymentMethodTypeName:
                               _cod_payment_method_type_name,
                                   codPaymentMethodImage: _cod_payment_method_image,
-                                   cashPay: double.parse((amountController.value.text=="")?"0.0":amountController.value.text),
+                                   cashPay: (amountController.value.text=="")?"0.0":amountController.value.text,
                           couponDiscountAmount:
                               Get.find<CouponController>().discount,
                           distance: orderController.distance,
@@ -2309,7 +2319,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         codPaymentMethodName: _cod_payment_method_name,
                         codPaymentMethodTypeName: _cod_payment_method_type_name,
                         codPaymentMethodImage: _cod_payment_method_image,
-                        cashPay: double.parse((amountController.value.text=="")?"0.0":amountController.value.text),
+                        cashPay: (amountController.value.text=="")?"0.0":amountController.value.text,
                         couponDiscountAmount:
                             Get.find<CouponController>().discount,
                         distance: orderController.distance,

@@ -37,7 +37,7 @@ class PlaceOrderBody {
   String _dmTips;
   String _codmethodtype;
   String _methodcodtype;
-  double _cashPay;
+  String _cashPay;
 
   PlaceOrderBody(
       {@required List<Cart> cart,
@@ -71,7 +71,7 @@ class PlaceOrderBody {
         @required String dmTips,
         @required String codmethodtype,
         @required String methodcodtype,
-        @required double  cashPay,
+        @required String  cashPay,
       }) {
     this._cart = cart;
     this._codPaymentMethodName = codPaymentMethodName;
@@ -135,7 +135,7 @@ class PlaceOrderBody {
   String get dmTips => _dmTips;
   String get codmethodtype => _codmethodtype;
   String get methodcodtype => _methodcodtype;
-  double get cashPay => _cashPay;
+  String get cashPay => _cashPay;
 
   PlaceOrderBody.fromJson(Map<String, dynamic> json) {
     if (json['cart'] != null) {
